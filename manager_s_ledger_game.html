@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manager's Ledger: Emotional Balance</title>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --blue: #004488;
+            --blue-light: #3377ff;
+            --red: #cc0000;
+            --yellow: #ffcc00;
+            --bg-dark: #0a0a1a;
+            --text-light: #ffffff;
+            --border-thick: 4px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'VT323', monospace;
+            background-color: var(--bg-dark);
+            color: var(--text-light);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            overflow-x: hidden;
+            font-size: 1.2rem;
+            line-height: 1.4;
+        }
+
+        h1, h2, h3 {
+            font-family: 'Press Start 2P', cursive;
+            text-transform: uppercase;
+            text-align: center;
+            color: var(--yellow);
+            text-shadow: 2px 2px 0px var(--red);
+            line-height: 1.5;
+        }
+
+        h1 { font-size: 1.5rem; margin-bottom: 20px; }
+        h2 { font-size: 1.2rem; margin-bottom: 15px; }
+
+        .screen {
+            display: none;
+            width: 100%;
+            max-width: 800px;
+            padding: 20px;
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        .screen.active {
+            display: flex;
+            flex-direction: column;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Pixel Art Components */
+        .pixel-box {
+            background: var(--blue);
+            border: var(--border-thick) solid var(--text-light);
+            box-shadow: 6px 6px 0px var(--blue-light);
+            padding: 20px;
+            margin-bottom: 20px;
+            position: relative;
+        }
+
+        .btn {
+            font-family: 'Press Start 2P', cursive;
+            background: var(--yellow);
+            color: var(--bg-dark);
+            border: var(--border-thick) solid var(--text-light);
+            padding: 15px 20px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            box-shadow: 4px 4px 0px var(--red);
+            transition: transform 0.1s;
+            margin: 10px auto;
+            display: block;
+            text-transform: uppercase;
+        }
+        .btn:hover { background: #ffea00; }
+        .btn:active { transform: translate(4px, 4px); box-shadow: 0px 0px 0px var(--red); }
+
+        .input-group { margin-bottom: 15px; }
+        .input-group label { display: block; margin-bottom: 5px; font-weight: bold; color: var(--yellow); }
+        .input-group input {
+            width: 100%;
+            padding: 10px;
+            font-family: 'VT323', monospace;
+            font-size: 1.5rem;
+            background: var(--bg-dark);
+            color: var(--text-light);
+            border: 2px solid var(--text-light);
+            outline: none;
+        }
+        .input-group input:focus { border-color: var(--yellow); }
+
+        /* HUD & Game Header */
+        .hud {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--blue);
+            border: 2px solid var(--text-light);
+            padding: 10px 20px;
+            margin-bottom: 15px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .hud-item { font-weight: bold; font-size: 1.4rem; }
+        .progress-container { width: 100%; background: var(--bg-dark); border: 2px solid var(--text-light); height: 20px; margin-top: 10px; }
+        .progress-bar { height: 100%; background: var(--yellow); width: 0%; transition: width 0.3s; }
+        
+        #audioToggle { background: var(--bg-dark); color: var(--text-light); border: 2px solid var(--text-light); cursor: pointer; padding: 5px 10px; font-family: 'VT323'; font-size: 1.2rem; }
+
+        /* Game Board */
+        .game-board {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-bottom: 30px;
+        }
+        @media(min-width: 600px) { .game-board { grid-template-columns: repeat(4, 1fr); } }
+        @media(min-width: 800px) { .game-board { grid-template-columns: repeat(5, 1fr); } }
+
+        .card {
+            aspect-ratio: 3/4;
+            perspective: 1000px;
+            cursor: pointer;
+        }
+        .card-inner {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            transition: transform 0.6s;
+            transform-style: preserve-3d;
+        }
+        .card.flip .card-inner, .card.matched .card-inner {
+            transform: rotateY(180deg);
+        }
+        .card-face {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 10px;
+            border: 2px solid var(--text-light);
+            text-align: center;
+            font-size: 1.1rem;
+            overflow: hidden;
+            word-wrap: break-word;
+        }
+        .card-front {
+            background: var(--blue-light);
+            background-image: repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(0,0,0,0.1) 10px, rgba(0,0,0,0.1) 20px);
+            color: var(--yellow);
+            font-family: 'Press Start 2P';
+            font-size: 2rem;
+        }
+        .card-back {
+            background: var(--bg-dark);
+            transform: rotateY(180deg);
+            overflow-y: auto;
+        }
+        .card-back.type-aksi { border-color: var(--blue-light); background: rgba(0, 68, 136, 0.5); }
+        .card-back.type-reaksi { border-color: var(--red); background: rgba(204, 0, 0, 0.3); }
+        .card.matched .card-back { background: var(--yellow); color: var(--bg-dark); border-color: var(--text-light); font-weight: bold; }
+
+        /* Badge & Feedback */
+        .badges { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; margin: 15px 0; }
+        .badge { background: var(--bg-dark); border: 2px dashed var(--yellow); color: var(--yellow); padding: 5px 10px; font-size: 1rem; opacity: 0.5; }
+        .badge.earned { background: var(--yellow); color: var(--bg-dark); border-style: solid; opacity: 1; font-weight: bold; box-shadow: 2px 2px 0 var(--red); }
+
+        .feedback-list { margin-top: 20px; text-align: left; }
+        .feedback-item { border-left: 4px solid var(--yellow); padding-left: 15px; margin-bottom: 20px; background: rgba(255,255,255,0.05); padding: 10px; }
+        .feedback-item h4 { color: var(--yellow); margin-bottom: 5px; }
+
+        footer { text-align: center; margin-top: auto; padding: 20px; font-size: 1rem; color: #888; }
+
+        /* Utilities */
+        .text-red { color: var(--red); }
+        .text-yellow { color: var(--yellow); }
+    </style>
+</head>
+<body>
+
+    <!-- 1. Gateway / Login Screen -->
+    <div id="login-screen" class="screen active">
+        <h1>Manager's Ledger</h1>
+        <div class="pixel-box">
+            <h2 style="color: var(--text-light); font-family: 'VT323'; text-transform: none; font-size:1.8rem; text-shadow: none;">The Emotional Balance</h2>
+            <p style="margin-bottom: 20px; text-align: center;">Selamat datang di simulasi manajerial. Harap identifikasi diri Anda untuk mengakses sistem.</p>
+            
+            <div class="input-group">
+                <label for="playerName">Nama Lengkap</label>
+                <input type="text" id="playerName" placeholder="Ketik nama Anda..." autocomplete="off">
+            </div>
+            <div class="input-group">
+                <label for="playerNIK">NIK (Maks 10 Digit Angka)</label>
+                <input type="text" id="playerNIK" placeholder="Contoh: 1234567890" maxlength="10" oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 10);">
+            </div>
+            
+            <button class="btn" onclick="goToBriefing()">Inisiasi Sistem</button>
+        </div>
+        <footer>Education & Training Dept. &copy; 2026</footer>
+    </div>
+
+    <!-- 2. Mission Briefing Screen -->
+    <div id="briefing-screen" class="screen">
+        <h1>Mission Briefing</h1>
+        <div class="pixel-box">
+            <h2><span class="text-yellow">WHY:</span> Menyadari Pentingnya Hubungan</h2>
+            <p style="margin-bottom: 15px;">
+                Dalam teori <strong>The Emotional Bank Account (Covey)</strong>, saldo kepercayaan yang tinggi menciptakan toleransi, rasa aman, dan komunikasi terbuka yang mempercepat penyelesaian masalah kerja.
+                Setiap interaksi harian Anda adalah sebuah "Setoran" (Membangun) atau "Tarikan" (Merusak).
+            </p>
+            
+            <h2 class="text-red">Aturan Main</h2>
+            <ul style="margin-left: 20px; margin-bottom: 20px;">
+                <li>Temukan pasangan yang tepat antara <strong>Tindakan Harian (Aksi)</strong> dan <strong>Dampak Relasional (Reaksi)</strong>.</li>
+                <li>Pasangan yang BENAR = +10 Poin (Setoran Emosional).</li>
+                <li>Pasangan yang SALAH = -5 Poin (Tarikan Emosional).</li>
+                <li>Selesaikan 10 misi sebelum Timer (180 Detik) habis!</li>
+            </ul>
+
+            <button class="btn" onclick="startGame()">Saya Siap Memimpin!</button>
+        </div>
+        <footer>Education & Training Dept. &copy; 2026</footer>
+    </div>
+
+    <!-- 3. Core Execution / Gameplay Screen -->
+    <div id="game-screen" class="screen">
+        <div class="hud">
+            <div class="hud-item">WAKTU: <span id="timer" class="text-red">180</span>s</div>
+            <div class="hud-item">SALDO: <span id="score" class="text-yellow">100</span></div>
+            <button id="audioToggle" onclick="toggleAudio()">🔊</button>
+        </div>
+        <div style="margin-bottom: 15px;">
+            <div style="display: flex; justify-content: space-between;">
+                <span>Progress Misi: <span id="progress-text">0</span>%</span>
+            </div>
+            <div class="progress-container">
+                <div class="progress-bar" id="progress-bar"></div>
+            </div>
+        </div>
+        
+        <div class="badges" id="in-game-badges">
+            <div class="badge" id="badge-1">Level 1 (3/10)</div>
+            <div class="badge" id="badge-2">Level 2 (6/10)</div>
+            <div class="badge" id="badge-3">Master (10/10)</div>
+        </div>
+
+        <div class="game-board" id="board">
+            <!-- Cards generated via JS -->
+        </div>
+    </div>
+
+    <!-- 4. Post-Action Debrief / Result Screen -->
+    <div id="result-screen" class="screen">
+        <h1>Laporan Evaluasi</h1>
+        <div class="pixel-box" style="text-align: center;">
+            <h2 id="result-title" class="text-yellow">Simulasi Selesai</h2>
+            <p>Agen: <span id="res-name" class="text-yellow"></span> | NIK: <span id="res-nik" class="text-yellow"></span></p>
+            <p style="font-size: 1.5rem; margin: 15px 0;">Saldo Emosional Akhir: <strong id="res-score" class="text-yellow"></strong></p>
+            <div id="reinforcement-msg" style="font-weight: bold; margin-bottom: 15px; font-size: 1.3rem;"></div>
+            
+            <div class="badges" id="final-badges">
+                <!-- Copied from ingame -->
+            </div>
+        </div>
+
+        <h2 style="font-size: 1.2rem; text-align: left;">Feedback Analisis Relasi:</h2>
+        <div class="feedback-list" id="feedback-container">
+            <!-- Feedback generated via JS -->
+        </div>
+
+        <button class="btn" onclick="location.reload()">Main Kembali</button>
+        <footer>Education & Training Dept. &copy; 2026</footer>
+    </div>
+
+    <!-- AUDIO ENGINE (Web Audio API) -->
+    <script>
+        // Web Audio Context
+        let audioCtx;
+        let masterGain;
+        let compressor;
+        let isMuted = false;
+        let bgmInterval;
+        let isAudioInit = false;
+
+        function initAudio() {
+            if (isAudioInit) return;
+            const AudioContext = window.AudioContext || window.webkitAudioContext;
+            audioCtx = new AudioContext();
+            
+            // Dynamics Compressor to prevent clipping from loud volumes
+            compressor = audioCtx.createDynamicsCompressor();
+            compressor.threshold.setValueAtTime(-24, audioCtx.currentTime);
+            compressor.knee.setValueAtTime(30, audioCtx.currentTime);
+            compressor.ratio.setValueAtTime(12, audioCtx.currentTime);
+            compressor.attack.setValueAtTime(0.003, audioCtx.currentTime);
+            compressor.release.setValueAtTime(0.25, audioCtx.currentTime);
+
+            // Master Gain (Volume set effectively to 2.5 conceptually, but compressed safely)
+            masterGain = audioCtx.createGain();
+            masterGain.gain.value = 2.5; 
+            
+            masterGain.connect(compressor);
+            compressor.connect(audioCtx.destination);
+            
+            isAudioInit = true;
+            startBGM();
+        }
+
+        function playTone(freq, type, duration, vol = 0.1) {
+            if (!isAudioInit || isMuted) return;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            
+            osc.type = type;
+            osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+            
+            gain.gain.setValueAtTime(vol, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+            
+            osc.connect(gain);
+            gain.connect(masterGain);
+            
+            osc.start();
+            osc.stop(audioCtx.currentTime + duration);
+        }
+
+        function playSFX(type) {
+            if(type === 'click') {
+                playTone(600, 'square', 0.1, 0.05);
+            } else if (type === 'correct') {
+                playTone(523.25, 'sine', 0.1, 0.1); // C5
+                setTimeout(() => playTone(659.25, 'sine', 0.15, 0.1), 100); // E5
+                setTimeout(() => playTone(783.99, 'sine', 0.2, 0.1), 200); // G5
+            } else if (type === 'wrong') {
+                playTone(150, 'sawtooth', 0.2, 0.15);
+                setTimeout(() => playTone(100, 'sawtooth', 0.3, 0.15), 150);
+            } else if (type === 'win') {
+                [523.25, 659.25, 783.99, 1046.50].forEach((freq, i) => {
+                    setTimeout(() => playTone(freq, 'square', 0.2, 0.1), i * 150);
+                });
+            } else if (type === 'lose') {
+                [300, 250, 200, 150].forEach((freq, i) => {
+                    setTimeout(() => playTone(freq, 'sawtooth', 0.3, 0.2), i * 200);
+                });
+            }
+        }
+
+        function startBGM() {
+            // Simple retro 8-bit loop
+            const notes = [261.63, 329.63, 392.00, 523.25, 392.00, 329.63]; // C E G C G E
+            let step = 0;
+            bgmInterval = setInterval(() => {
+                if(!isMuted && audioCtx.state === 'running') {
+                    playTone(notes[step], 'triangle', 0.2, 0.03); // Low volume BGM
+                    step = (step + 1) % notes.length;
+                }
+            }, 300);
+        }
+
+        function toggleAudio() {
+            if(!isAudioInit) initAudio();
+            isMuted = !isMuted;
+            document.getElementById('audioToggle').innerText = isMuted ? '🔇' : '🔊';
+        }
+    </script>
+
+    <!-- GAME LOGIC -->
+    <script>
+        // Data Materi (10 Soal)
+        const gameData = [
+            { id: 1, aksi: "Mengalokasikan waktu khusus untuk sesi 1-on-1 rutin dengan anggota tim.", reaksi: "SETORAN: Komunikasi terbuka & rasa aman meningkat drastis.", feedback: "Fokus: Manajemen Waktu & Komunikasi. Waktu khusus membuktikan Anda menghargai mereka secara personal." },
+            { id: 2, aksi: "Menegur kesalahan anggota tim secara detail di depan forum rapat besar.", reaksi: "TARIKAN: Menghancurkan harga diri dan toleransi dalam tim.", feedback: "Fokus: Komunikasi. Teguran di depan umum adalah tarikan saldo terbesar karena mempermalukan (Praise in public, criticize in private)." },
+            { id: 3, aksi: "Membantu bawahan menyusun ulang skala prioritas saat beban kerja overload.", reaksi: "SETORAN: Membangun kepercayaan & semangat kolaborasi.", feedback: "Fokus: Skala Prioritas. Pemimpin yang hadir saat krisis adalah pendeposit emosional terbaik." },
+            { id: 4, aksi: "Mengubah jadwal meeting secara mendadak tanpa penjelasan atau alasan mendesak.", reaksi: "TARIKAN: Mengurangi respek terhadap waktu orang lain.", feedback: "Fokus: Manajemen Waktu. Ketidakpastian jadwal merusak ritme kerja dan respek tim." },
+            { id: 5, aksi: "Mengakui kesalahan keputusan sendiri dan meminta maaf secara tulus kepada tim.", reaksi: "SETORAN: Mempercepat problem solving dan menumbuhkan respek.", feedback: "Fokus: Sikap/Attitude. Vulnerability (kerentanan) seorang manajer menumbuhkan budaya anti-blaming." },
+            { id: 6, aksi: "Mendelegasikan tugas penting tanpa ekspektasi dan KPI yang jelas.", reaksi: "TARIKAN: Menciptakan kebingungan, frustrasi, & potensi konflik.", feedback: "Fokus: Komunikasi & Delegasi. Ambruknya relasi sering berawal dari ekspektasi yang tidak sinkron." },
+            { id: 7, aksi: "Memberikan apresiasi spesifik atas pencapaian kecil yang dilakukan staf.", reaksi: "SETORAN: Meningkatkan motivasi intrinsik dan rasa dihargai.", feedback: "Fokus: Sikap. Apresiasi spesifik jauh lebih bermakna daripada pujian kosong sekadarnya." },
+            { id: 8, aksi: "Mengabaikan pesan/email krusial tim berhari-hari tanpa konfirmasi baca.", reaksi: "TARIKAN: Mengikis rasa aman dan menghambat laju progres proyek.", feedback: "Fokus: Komunikasi. Ghosting di dunia kerja merusak 'trust' operasional secara instan." },
+            { id: 9, aksi: "Mendengarkan keluhan karyawan secara aktif tanpa memotong pembicaraan.", reaksi: "SETORAN: Memberikan validasi emosi yang memperkuat ikatan empati.", feedback: "Fokus: Komunikasi. Mendengar untuk mengerti, bukan mendengar untuk langsung menjawab." },
+            { id: 10, aksi: "Mengambil kredit/pujian atas ide brilian atau hasil kerja keras bawahan.", reaksi: "TARIKAN: Menghancurkan trust secara fatal tak dapat diperbaiki.", feedback: "Fokus: Integritas. Ini adalah dosa besar manajerial yang menguras seluruh saldo emosional seketika." }
+        ];
+
+        // State variables
+        let cards = [];
+        let firstCard = null;
+        let secondCard = null;
+        let lockBoard = false;
+        let score = 100;
+        let matches = 0;
+        let totalPairs = gameData.length;
+        let timeLeft = 180;
+        let timerId;
+        let userProfile = { name: "", nik: "" };
+
+        // Navigation
+        function showScreen(id) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+            window.scrollTo(0,0);
+        }
+
+        function goToBriefing() {
+            const name = document.getElementById('playerName').value.trim();
+            const nik = document.getElementById('playerNIK').value.trim();
+            
+            if(name === "" || nik === "") {
+                alert("Mohon lengkapi Nama dan NIK Anda.");
+                return;
+            }
+            if(nik.length !== 10) {
+                alert("NIK harus tepat 10 digit angka.");
+                return;
+            }
+
+            userProfile.name = name;
+            userProfile.nik = nik;
+            
+            // Audio Initialization standard trigger on user gesture
+            initAudio();
+            playSFX('click');
+            showScreen('briefing-screen');
+        }
+
+        function startGame() {
+            playSFX('click');
+            showScreen('game-screen');
+            setupBoard();
+            startTimer();
+        }
+
+        // Gameplay setup
+        function setupBoard() {
+            const board = document.getElementById('board');
+            board.innerHTML = '';
+            cards = [];
+
+            // Create Aksi and Reaksi cards
+            gameData.forEach(item => {
+                cards.push({ id: item.id, type: 'aksi', text: item.aksi });
+                cards.push({ id: item.id, type: 'reaksi', text: item.reaksi });
+            });
+
+            // Shuffle
+            cards.sort(() => 0.5 - Math.random());
+
+            // Render
+            cards.forEach((cardItem, index) => {
+                const cardEl = document.createElement('div');
+                cardEl.classList.add('card');
+                cardEl.dataset.id = cardItem.id;
+                cardEl.dataset.index = index;
+                
+                cardEl.innerHTML = `
+                    <div class="card-inner">
+                        <div class="card-face card-front">?</div>
+                        <div class="card-face card-back type-${cardItem.type}">
+                            <span style="font-size:0.7rem; color:${cardItem.type === 'aksi'? '#ffcc00':'#ffffff'}; margin-bottom:5px; display:block; border-bottom:1px solid currentColor;">${cardItem.type.toUpperCase()}</span>
+                            ${cardItem.text}
+                        </div>
+                    </div>
+                `;
+                
+                cardEl.addEventListener('click', flipCard);
+                board.appendChild(cardEl);
+            });
+        }
+
+        function flipCard() {
+            if (lockBoard) return;
+            if (this === firstCard) return;
+
+            playSFX('click');
+            this.classList.add('flip');
+
+            if (!firstCard) {
+                firstCard = this;
+                return;
+            }
+
+            secondCard = this;
+            checkForMatch();
+        }
+
+        function checkForMatch() {
+            let isMatch = firstCard.dataset.id === secondCard.dataset.id;
+
+            if (isMatch) {
+                disableCards();
+                updateScore(10);
+                matches++;
+                updateProgress();
+                playSFX('correct');
+                
+                if (matches === totalPairs) {
+                    setTimeout(() => finishGame(true), 1000);
+                }
+            } else {
+                unflipCards();
+                updateScore(-5);
+                playSFX('wrong');
+            }
+        }
+
+        function disableCards() {
+            firstCard.removeEventListener('click', flipCard);
+            secondCard.removeEventListener('click', flipCard);
+            firstCard.classList.add('matched');
+            secondCard.classList.add('matched');
+            resetBoard();
+        }
+
+        function unflipCards() {
+            lockBoard = true;
+            setTimeout(() => {
+                firstCard.classList.remove('flip');
+                secondCard.classList.remove('flip');
+                resetBoard();
+            }, 1500); // 1.5s reading time for incorrect pairs
+        }
+
+        function resetBoard() {
+            [firstCard, secondCard, lockBoard] = [null, null, false];
+        }
+
+        function updateScore(points) {
+            score += points;
+            document.getElementById('score').innerText = score;
+        }
+
+        function updateProgress() {
+            const percentage = Math.floor((matches / totalPairs) * 100);
+            document.getElementById('progress-bar').style.width = percentage + '%';
+            document.getElementById('progress-text').innerText = percentage;
+
+            // Badges logic
+            if(matches >= 3) document.getElementById('badge-1').classList.add('earned');
+            if(matches >= 6) document.getElementById('badge-2').classList.add('earned');
+            if(matches >= 10) document.getElementById('badge-3').classList.add('earned');
+        }
+
+        function startTimer() {
+            document.getElementById('timer').innerText = timeLeft;
+            timerId = setInterval(() => {
+                timeLeft--;
+                document.getElementById('timer').innerText = timeLeft;
+                if (timeLeft <= 0) {
+                    finishGame(false);
+                }
+            }, 1000);
+        }
+
+        // Post Game
+        function finishGame(isCompleted) {
+            clearInterval(timerId);
+            showScreen('result-screen');
+            
+            document.getElementById('res-name').innerText = userProfile.name;
+            document.getElementById('res-nik').innerText = userProfile.nik;
+            document.getElementById('res-score').innerText = score + " POIN";
+            
+            const msgEl = document.getElementById('reinforcement-msg');
+            const titleEl = document.getElementById('result-title');
+            
+            if (isCompleted && score >= 150) {
+                playSFX('win');
+                titleEl.innerText = "MISSION ACCOMPLISHED!";
+                msgEl.innerText = "🌟 Luar Biasa! Anda adalah Pemimpin yang Empatik dengan Saldo Emosional yang Kaya.";
+                msgEl.style.color = "var(--yellow)";
+            } else if (isCompleted) {
+                playSFX('win');
+                titleEl.innerText = "MISSION CLEAR";
+                msgEl.innerText = "👍 Bagus! Anda mengerti konsepnya, namun pastikan untuk meminimalkan 'Tarikan' dalam interaksi Anda.";
+                msgEl.style.color = "var(--blue-light)";
+            } else {
+                playSFX('lose');
+                titleEl.innerText = "TIME OUT!";
+                titleEl.classList.replace('text-yellow', 'text-red');
+                msgEl.innerText = "⚠️ Jangan Menyerah! Terus asah insting manajerial Anda untuk membedakan Setoran dan Tarikan.";
+                msgEl.style.color = "var(--red)";
+            }
+
+            // Render Feedback
+            const feedbackBox = document.getElementById('feedback-container');
+            feedbackBox.innerHTML = '';
+            gameData.forEach(item => {
+                feedbackBox.innerHTML += `
+                    <div class="feedback-item">
+                        <h4>Studi Kasus #${item.id}</h4>
+                        <p style="font-size:0.9rem; margin-bottom:5px;"><strong>Aksi:</strong> ${item.aksi}</p>
+                        <p style="font-size:0.9rem; margin-bottom:5px; color:var(--red);"><strong>Reaksi:</strong> ${item.reaksi}</p>
+                        <p style="font-size:0.9rem; color:#88ff88;"><strong>Catatan LMS:</strong> ${item.feedback}</p>
+                    </div>
+                `;
+            });
+        }
+    </script>
+</body>
+</html>
