@@ -616,3 +616,29 @@
     </script>
 </body>
 </html>
+const webAppURL = "https://docs.google.com/spreadsheets/d/1G3t5a3gARWqCX6qsweRpSG5NjDaI5l-p1FJQEsV-g14/edit?gid=803295305#gid=803295305";
+    
+    // Kalkulasi matematika untuk performa (sesuai logika di Google Sheets)
+    const durasi = 180 - timeLeft;
+    const salah = (100 + (matches * 10) - score) / 5;
+
+    const payload = {
+        namaLengkap: userProfile.name,
+        nik: userProfile.nik,
+        statusPenyelesaian: document.getElementById('result-title').innerText,
+        saldoEmosionalAkhir: score,
+        waktuTersisa: timeLeft,
+        durasiPengerjaan: durasi,
+        pasanganBenar: matches,
+        estimasiKesalahan: salah
+    };
+
+    fetch(webAppURL, {
+        method: "POST",
+        headers: { "Content-Type": "text/plain;charset=utf-8" }, // Menggunakan text/plain untuk menghindari preflight CORS di beberapa browser
+        body: JSON.stringify(payload)
+    })
+    .then(res => res.json())
+    .then(data => console.log("Berhasil mencatat log:", data))
+    .catch(err => console.error("Gagal mengirim log:", err));
+}
